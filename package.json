@@ -1,19 +1,16 @@
+
 {
-  "name": "woonlasten-besparingstool",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "name": "woonplan-hub-server",
+  "version": "1.0.0",
+  "description": "Simple server for Woonplan Hub static files.",
+  "main": "server.js",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "start": "node server.js"
   },
   "dependencies": {
-    "firebase": "^11.8.1"
+    "express": "^4.17.1"
   },
-  "devDependencies": {
-    "@types/node": "^22.14.0",
-    "typescript": "~5.7.2",
-    "vite": "^6.2.0"
+  "engines": {
+    "node": ">=18"
   }
 }

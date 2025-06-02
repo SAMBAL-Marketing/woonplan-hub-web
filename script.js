@@ -5,7 +5,7 @@
 
 // Firebase v9+ Modular SDK Imports
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics"; // Analytics import
+// Removed: import { getAnalytics } from "firebase/analytics"; 
 import {
     getAuth,
     onAuthStateChanged,
@@ -45,7 +45,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const fbAuth = getAuth(app);
 const db = getFirestore(app);
-const analytics = getAnalytics(app); // Analytics initialized
+// Removed: const analytics = getAnalytics(app); 
 
 
 // Data constants (voorbeelddata, dient vervangen te worden door accurate data)
