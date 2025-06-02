@@ -1,16 +1,25 @@
 {
   "hosting": {
-    "public": "https://github.com/SAMBAL-Marketing/woonplan-hub-web",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**" 
-    ],
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "run": {
+          "serviceId": "woonplan-hub-web",
+          "region": "europe-west4"
+        }
       }
+    ],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "Dockerfile",
+      "package-lock.json",
+      "server.js",
+      "index.tsx",
+      "script.js",
+      "index.css",
+      "metadata.json"
     ]
   }
 }
