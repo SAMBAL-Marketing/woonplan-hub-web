@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "your-public-directory", // This is CRUCIAL
+    "public": "https://github.com/SAMBAL-Marketing/woonplan-hub-web",
     "ignore": [
       "firebase.json",
       "**/.*",
