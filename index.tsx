@@ -5,7 +5,7 @@
 
 // Firebase v9+ Modular SDK Imports
 import { initializeApp, FirebaseApp } from "firebase/app";
-// Analytics import removed as getAnalytics and Analytics type were not found and variable was unused.
+import { getAnalytics, Analytics } from "firebase/analytics"; // Re-added
 import {
     getAuth,
     onAuthStateChanged,
@@ -50,7 +50,7 @@ const firebaseConfig = {
 const app: FirebaseApp = initializeApp(firebaseConfig);
 const fbAuth = getAuth(app);
 const db: Firestore = getFirestore(app);
-// const analytics: Analytics = getAnalytics(app); // Line removed
+const analytics: Analytics = getAnalytics(app); // Re-added
 
 
 // Data constants (voorbeelddata, dient vervangen te worden door accurate data)
@@ -485,7 +485,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             if (validateCurrentStep()) {
                 currentStep = Math.min(currentStep + 1, fieldsets.length - 1);
-                 if (fieldsets[currentStep] && fieldsets[currentStep].id === 'resultStep' && !lastCalculationResults) {
+                 if (fieldsets[currentStep] && (fieldsets[currentStep] as HTMLElement).id === 'resultStep' && !lastCalculationResults) {
                     collectAndDisplayData(); // Calculate if moving to results step and no results yet
                  }
                 initializeForm();
@@ -506,7 +506,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (e.key === 'Enter') {
                 if (!((e.target as HTMLElement).tagName === 'TEXTAREA' || (e.target as HTMLElement).tagName === 'BUTTON')) {
                     e.preventDefault();
-                    const activeFieldset = fieldsets[currentStep];
+                    const activeFieldset = fieldsets[currentStep] as HTMLElement;
                     const calculateBtnInStep = activeFieldset.querySelector<HTMLButtonElement>('#calculate-btn.next-btn');
                     if (calculateBtnInStep) {
                         calculateBtnInStep.click();
@@ -529,8 +529,8 @@ document.addEventListener("DOMContentLoaded", () => {
         aantalBewonersSelect.addEventListener('change', () => {
             const bewoners = aantalBewonersSelect.value;
             const placeholders = {
-                gas: { '1': 900, '2': 1100, '3': 1400, '4': 1700, '5': 1900 },
-                elektra: { '1': 1600, '2': 2500, '3': 3400, '4': 4300, '5': 5000 }
+                gas: { '1': 900, '2': 1100, '3': 1400, '4': 1700, '5': 1900 } as Record<string, number>,
+                elektra: { '1': 1600, '2': 2500, '3': 3400, '4': 4300, '5': 5000 } as Record<string, number>
             };
             if (gasConsumptionInput && bewoners in placeholders.gas) {
                 gasConsumptionInput.placeholder = (placeholders.gas as any)[bewoners].toString();
@@ -664,7 +664,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function collectAndDisplayData() {
-        const currentFieldset = fieldsets[currentStep];
+        const currentFieldset = fieldsets[currentStep] as HTMLElement;
         const calculateBtn = currentFieldset?.querySelector<HTMLButtonElement>('#calculate-btn.next-btn');
 
         if (!validateCurrentStep()) {
@@ -728,13 +728,13 @@ document.addEventListener("DOMContentLoaded", () => {
             meterkastPrijs,
             panelInvestment,
             heatPumpDetails.cost,
-            ...Object.values(insulationResults).map(r => r.brutoPrice || 0)
+            ...Object.values(insulationResults).map((r:any) => r.brutoPrice || 0)
         ].reduce((a, b) => a + b, 0);
 
         const totaleSubsidies = [
             heatPumpDetails.subsidy,
             panelSubsidy,
-            ...Object.values(insulationResults).map(r => r.subsidie || 0)
+            ...Object.values(insulationResults).map((r:any) => r.subsidie || 0)
         ].reduce((a, b) => a + b, 0);
 
         const nettoInvestering = totaleBrutoInvestering - totaleSubsidies;
@@ -757,7 +757,7 @@ document.addEventListener("DOMContentLoaded", () => {
         newGasConsumption = newGasConsumption * (1 - (heatPumpDetails.GbesparingFactor || 0));
         newElectricityConsumption += (heatPumpDetails.Econsumption || 0);
 
-        Object.values(insulationResults).forEach(insuResult => {
+        Object.values(insulationResults).forEach((insuResult: any) => {
             if (insuResult.brutoPrice > 0) {
                 newGasConsumption *= (1 - (insuResult.gasSavingApplied || 0));
             }
@@ -1461,7 +1461,7 @@ document.addEventListener("DOMContentLoaded", () => {
     async function loadSettings() {
         if (!currentUser) { // Apply default settings if no user
              document.body.classList.remove('dark-mode');
-             if(darkModeToggle) darkModeToggle.checked = false;
+             if(darkModeToggle) (darkModeToggle as HTMLInputElement).checked = false;
             return;
         }
         try {
@@ -1472,25 +1472,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 const settings = appData?.[SETTINGS_FIELD] || {};
                 if (settings.darkMode) {
                     document.body.classList.add('dark-mode');
-                    if(darkModeToggle) darkModeToggle.checked = true;
+                    if(darkModeToggle) (darkModeToggle as HTMLInputElement).checked = true;
                 } else {
                      document.body.classList.remove('dark-mode');
-                     if(darkModeToggle) darkModeToggle.checked = false;
+                     if(darkModeToggle) (darkModeToggle as HTMLInputElement).checked = false;
                 }
             } else { // No settings saved yet, apply defaults
                 document.body.classList.remove('dark-mode');
-                if(darkModeToggle) darkModeToggle.checked = false;
+                if(darkModeToggle) (darkModeToggle as HTMLInputElement).checked = false;
             }
         } catch (error) {
             console.error("Error loading settings from Firestore:", error);
              document.body.classList.remove('dark-mode'); // Fallback to default
-             if(darkModeToggle) darkModeToggle.checked = false;
+             if(darkModeToggle) (darkModeToggle as HTMLInputElement).checked = false;
         }
     }
     async function saveSettings() {
         if (!currentUser) return;
         const settingsToSave = {
-            darkMode: darkModeToggle ? darkModeToggle.checked : false,
+            darkMode: darkModeToggle ? (darkModeToggle as HTMLInputElement).checked : false,
         };
         try {
             const userAppDataDocRef = getAppDataDocRef(currentUser.uid);
@@ -1503,7 +1503,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (darkModeToggle) {
         darkModeToggle.addEventListener('change', () => {
-            document.body.classList.toggle('dark-mode', darkModeToggle.checked);
+            document.body.classList.toggle('dark-mode', (darkModeToggle as HTMLInputElement).checked);
             saveSettings();
         });
     }
@@ -1548,7 +1548,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
             if (confirm(`WEET U ZEKER DAT U AL UW APPLICATIE DATA WILT WISSEN VOOR GEBRUIKER "${currentUser.email}"?\nDit omvat alle opgeslagen klanten, instellingen, en de huidige formuliercache voor deze gebruiker in de cloud. Dit kan niet ongedaan worden gemaakt!`)) {
-                setButtonLoadingState(clearAllAppDataBtn, "Wissen...");
+                setButtonLoadingState(clearAllAppDataBtn as HTMLButtonElement, "Wissen...");
                 try {
                     // Delete appData document (settings, form cache)
                     const userAppDataDocRef = getAppDataDocRef(currentUser.uid);
@@ -1577,7 +1577,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.error("Error clearing all app data:", error);
                     alert("Fout bij het wissen van data. Zie console.");
                 } finally {
-                    resetButtonState(clearAllAppDataBtn, 'Wis Mijn Applicatie Data', 'fa-exclamation-triangle');
+                    resetButtonState(clearAllAppDataBtn as HTMLButtonElement, 'Wis Mijn Applicatie Data', 'fa-exclamation-triangle');
                 }
             }
         });
