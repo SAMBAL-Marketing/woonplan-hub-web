@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Woonlasten Besparingstool & Dashboard</title>
+    <link rel="stylesheet" href="index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Firebase SDKs are loaded via import map and ES Modules in script.js -->
+<script type="importmap">
+{
+  "imports": {
+    "firebase/": "https://esm.sh/firebase@^11.8.1/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+
+    <div id="app-container">
+        <!-- Login View -->
+        <div id="login-view" class="app-view active-view">
+            <div class="login-container">
+                <h1>Welkom terug</h1>
+                <p>Log in om toegang te krijgen tot uw dashboard.</p>
+                <div class="form-group">
+                    <label for="username">E-mailadres (Gebruikersnaam):</label>
+                    <input type="email" id="username" name="username" value="admin@example.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Wachtwoord:</label>
+                    <input type="password" id="password" name="password" value="password" required autocomplete="current-password">
+                </div>
+                <button type="button" id="login-btn" class="btn-primary">Login <i class="fas fa-sign-in-alt"></i></button>
+                <p id="login-error-message" class="error-message" style="margin-top: 15px;"></p>
+            </div>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="app-view">
+            <header class="dashboard-header">
+                <h1>Dashboard</h1>
+                <button type="button" id="logout-btn" class="btn-secondary"><i class="fas fa-sign-out-alt"></i> Uitloggen</button>
+            </header>
+            <nav class="dashboard-nav">
+                <button type="button" id="add-client-nav-btn" class="btn-dashboard-action"><i class="fas fa-user-plus"></i> Klant Toevoegen</button>
+                <button type="button" id="contact-nav-btn" class="btn-dashboard-action"><i class="fas fa-question-circle"></i> Hulp & Contact</button>
+                <button type="button" id="settings-nav-btn" class="btn-dashboard-action"><i class="fas fa-cog"></i> Instellingen</button>
+            </nav>
+            <section id="client-list-section">
+                <h2>Klanten Overzicht</h2>
+                <div id="client-list-container">
+                    <p>Laden van klanten...</p>
+                    <!-- Klanten worden hier dynamisch geladen -->
+                </div>
+            </section>
+        </div>
+
+        <!-- Tool View (Huidige rekentool) -->
+        <div id="tool-view" class="app-view">
+            <header class="tool-header">
+                 <button type="button" id="back-to-dashboard-from-tool-btn" class="btn-secondary btn-small back-to-dashboard-btn"><i class="fas fa-arrow-left"></i> Terug naar Dashboard</button>
+                 <button type="button" id="clear-current-form-btn" class="btn-warning btn-small" title="Wis de huidige formulierinvoer">
+                    <i class="fas fa-eraser"></i> Wis Huidig Formulier
+                </button>
+            </header>
+            <div class="container"> <!-- Bestaande container met formulier -->
+                <h1>Bereken Woonlasten Besparing</h1>
+
+                <div class="progress-container">
+                    <div id="progress" class="progress-bar-line"></div>
+                    <div class="progress-steps-container">
+                        <div class="progress-step active" data-step-name="Basis"><i class="fas fa-home"></i></div>
+                        <div class="progress-step" data-step-name="Verbruik"><i class="fas fa-lightbulb"></i></div>
+                        <div class="progress-step" data-step-name="Maatregelen"><i class="fas fa-hammer"></i></div>
+                        <div class="progress-step" data-step-name="Resultaat"><i class="fas fa-chart-pie"></i></div>
+                        <div class="progress-step" data-step-name="Klantgegevens"><i class="fas fa-file-alt"></i></div>
+                    </div>
+                </div>
+
+                <form id="energyDataForm">
+                    <!-- Stap 1: Basisgegevens Woning & Bewoning -->
+                    <fieldset class="form-step active">
+                        <h2><span class="section-icon"><i class="fas fa-home"></i></span>Stap 1: Basisgegevens Woning & Bewoning</h2>
+                        <div class="form-group">
+                            <label for="woningtype">Woningtype:</label>
+                            <select id="woningtype" name="woningtype" required aria-describedby="woningtype-error">
+                                <option value="">Kies type...</option>
+                                <option value="Tussenwoning">Tussenwoning</option>
+                                <option value="Hoekwoning">Hoekwoning</option>
+                                <option value="2 onder 1 kap">2 onder 1 kap</option>
+                                <option value="Vrijstaand">Vrijstaand</option>
+                            </select>
+                            <span class="error-message" id="woningtype-error" aria-live="polite"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="energielabel">Huidig energielabel:</label>
+                            <select id="energielabel" name="energielabel" required aria-describedby="energielabel-error">
+                                <option value="">Kies label...</option>
+                                <option value="G">G</option>
+                                <option value="F">F</option>
+                                <option value="E">E</option>
+                                <option value="D">D</option>
+                                <option value="C">C</option>
+                                <option value="B">B</option>
+                                <option value="A">A</option>
+                                <option value="A+">A+</option>
+                                <option value="A++">A++</option>
+                                <option value="A+++">A+++</option>
+                                <option value="A++++">A++++</option>
+                            </select>
+                            <span class="error-message" id="energielabel-error" aria-live="polite"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="aantalBewoners">Aantal bewoners:</label>
+                            <select id="aantalBewoners" name="aantalBewoners" required aria-describedby="aantalBewoners-error">
+                                <option value="">Kies aantal...</option>
+                                <option value="1">1 persoon</option>
+                                <option value="2">2 personen</option>
+                                <option value="3">3 personen</option>
+                                <option value="4">4 personen</option>
+                                <option value="5">5+ personen</option>
+                            </select>
+                            <span class="error-message" id="aantalBewoners-error" aria-live="polite"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="bouwjaar">Bouwjaar woning (bijv. 1985):</label>
+                            <input type="number" id="bouwjaar" name="bouwjaar" min="1800" placeholder="YYYY" required aria-describedby="bouwjaar-error bouwjaar-help">
+                            <small id="bouwjaar-help" class="input-help-text">Het bouwjaar beïnvloedt het advies voor isolatiemaatregelen.</small>
+                            <span class="error-message" id="bouwjaar-error" aria-live="polite"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="livingArea">Woonoppervlakte (m²):</label>
+                            <input type="number" id="livingArea" name="livingArea" min="20" placeholder="m²" required aria-describedby="livingArea-error">
+                            <span class="error-message" id="livingArea-error" aria-live="polite"></span>
+                        </div>
+                        <div class="form-navigation">
+                            <button type="button" class="next-btn">Volgende <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    </fieldset>
+
+                    <!-- Stap 2: Huidig Energieverbruik -->
+                    <fieldset class="form-step">
+                        <h2><span class="section-icon"><i class="fas fa-lightbulb"></i></span>Stap 2: Huidig Energieverbruik</h2>
+                        <div class="form-group">
+                            <label for="gasConsumption">Gas verbruik (m³ per jaar):</label>
+                            <input type="number" id="gasConsumption" name="gasConsumption" min="0" required aria-describedby="gasConsumption-error">
+                            <span class="error-message" id="gasConsumption-error" aria-live="polite"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="electricityConsumption">Elektriciteit verbruik (kWh per jaar):</label>
+                            <input type="number" id="electricityConsumption" name="electricityConsumption" min="0" required aria-describedby="electricityConsumption-error">
+                            <span class="error-message" id="electricityConsumption-error" aria-live="polite"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="currentSolarPanels">Aantal aanwezige zonnepanelen:</label>
+                            <input type="number" id="currentSolarPanels" name="currentSolarPanels" value="0" min="0" required aria-describedby="currentSolarPanels-error">
+                            <span class="error-message" id="currentSolarPanels-error" aria-live="polite"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="currentEnergyBill">Optioneel: huidig maandbedrag energiekosten (€):</label>
+                            <input type="number" id="currentEnergyBill" name="currentEnergyBill" min="0" aria-describedby="currentEnergyBill-error">
+                            <span class="error-message" id="currentEnergyBill-error" aria-live="polite"></span>
+                        </div>
+                        <div class="form-navigation">
+                            <button type="button" class="prev-btn"><i class="fas fa-arrow-left"></i> Vorige</button>
+                            <button type="button" class="next-btn">Volgende <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    </fieldset>
+
+                    <!-- Stap 3: Te Nemen Maatregelen & Financiering -->
+                    <fieldset class="form-step">
+                        <h2><span class="section-icon"><i class="fas fa-hammer"></i></span>Stap 3: Te Nemen Maatregelen & Financiering</h2>
+                        <section>
+                            <h3>Isolatie <small id="insulation-advice-note" class="advice-note">Advies op basis van bouwjaar.</small></h3>
+                            <div class="form-group">
+                                <label for="spouwmuurIsolatie">Spouwmuurisolatie:</label>
+                                <select id="spouwmuurIsolatie" name="spouwmuurIsolatie" aria-describedby="spouwmuurIsolatie-error">
+                                    <option value="Yes" selected>Ja</option>
+                                    <option value="No">Nee</option>
+                                    <option value="nvt">N.v.t. / weet niet</option>
+                                </select>
+                                <span class="error-message" id="spouwmuurIsolatie-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="vloerIsolatie">Vloerisolatie:</label>
+                                <select id="vloerIsolatie" name="vloerIsolatie" aria-describedby="vloerIsolatie-error">
+                                     <option value="Yes" selected>Ja</option>
+                                     <option value="No">Nee</option>
+                                     <option value="nvt">N.v.t. / weet niet</option>
+                                </select>
+                                <span class="error-message" id="vloerIsolatie-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="dakIsolatie">Dakisolatie:</label>
+                                <select id="dakIsolatie" name="dakIsolatie" aria-describedby="dakIsolatie-error">
+                                   <option value="Yes" selected>Ja</option>
+                                   <option value="No">Nee</option>
+                                   <option value="nvt">N.v.t. / weet niet</option>
+                                </select>
+                                <span class="error-message" id="dakIsolatie-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="isolatieGlasHR">Isolatieglas (HR++):</label>
+                                <select id="isolatieGlasHR" name="isolatieGlasHR" aria-describedby="isolatieGlasHR-error">
+                                    <option value="Yes" selected>Ja</option>
+                                    <option value="No">Nee</option>
+                                    <option value="nvt">N.v.t. / weet niet</option>
+                                </select>
+                                <span class="error-message" id="isolatieGlasHR-error" aria-live="polite"></span>
+                            </div>
+                        </section>
+                        <section>
+                            <h3>Warmtepomp & Zonnepanelen</h3>
+                            <div class="form-group">
+                                <label for="heatPumpType">Type Warmtepomp:</label>
+                                <select id="heatPumpType" name="heatPumpType" aria-describedby="heatPumpType-error">
+                                    <option value="none">Geen</option>
+                                    <option value="hybride">Hybride</option>
+                                    <option value="volledig_elektrisch">Volledig Elektrisch</option>
+                                </select>
+                                 <small id="adviesW" class="advice-note input-help-text"></small>
+                                 <span class="error-message" id="heatPumpType-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="heatPumpSize">Capaciteit Warmtepomp (indien gekozen):</label>
+                                <select id="heatPumpSize" name="heatPumpSize" aria-describedby="heatPumpSize-error">
+                                    <option value="none">Kies capaciteit...</option>
+                                    <option value="3kW">3 kW</option>
+                                    <option value="5kW">5 kW</option>
+                                    <option value="7kW">7 kW</option>
+                                    <option value="9kW">9 kW</option>
+                                </select>
+                                <span class="error-message" id="heatPumpSize-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="numberOfPanels">Aantal nieuwe zonnepanelen:</label>
+                                <select id="numberOfPanels" name="numberOfPanels" aria-describedby="numberOfPanels-error"></select> <!-- Populated by JS -->
+                                <small id="adviesZ" class="advice-note input-help-text"></small>
+                                <span class="error-message" id="numberOfPanels-error" aria-live="polite"></span>
+                            </div>
+                        </section>
+                        <section>
+                            <h3>Overige Maatregelen</h3>
+                             <div class="form-group">
+                                <label for="meterkastNieuw">Meterkast aanpassen/vernieuwen:</label>
+                                <select id="meterkastNieuw" name="meterkastNieuw" aria-describedby="meterkastNieuw-error">
+                                    <option value="geen_vervanging">Geen vervanging nodig</option>
+                                    <option value="1_fase_naar_3_fase">1-fase naar 3-fase</option>
+                                    <option value="nieuwe_groepenkast">Nieuwe groepenkast</option>
+                                </select>
+                                <span class="error-message" id="meterkastNieuw-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="aircoType">Airconditioning (type):</label>
+                                <select id="aircoType" name="aircoType" aria-describedby="aircoType-error">
+                                    <option value="none">Geen</option>
+                                    <option value="single_split_2_5kW">Single Split (2.5kW)</option>
+                                    <option value="multi_split_5kW">Multi Split (5kW)</option>
+                                </select>
+                                <span class="error-message" id="aircoType-error" aria-live="polite"></span>
+                            </div>
+                        </section>
+                        <section>
+                            <h3>Financiering</h3>
+                            <div class="form-group">
+                                <label for="interestRate">Rentepercentage (% per jaar):</label>
+                                <input type="number" id="interestRate" name="interestRate" value="3.3" step="0.1" min="0" required aria-describedby="interestRate-error">
+                                <span class="error-message" id="interestRate-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="loanTerm">Looptijd lening (maanden):</label>
+                                <input type="number" id="loanTerm" name="loanTerm" value="360" step="12" min="12" required aria-describedby="loanTerm-error loanTerm-help">
+                                <small id="loanTerm-help" class="input-help-text">Voer een veelvoud van 12 in (bijv. 120, 240, 360).</small>
+                                <span class="error-message" id="loanTerm-error" aria-live="polite"></span>
+                            </div>
+                        </section>
+                        <div class="form-navigation">
+                            <button type="button" class="prev-btn"><i class="fas fa-arrow-left"></i> Vorige</button>
+                            <button type="button" class="next-btn" id="calculate-btn">
+                                <span class="btn-text">Bereken Besparing</span>
+                                <i class="fas fa-calculator icon-main"></i>
+                                <i class="fas fa-spinner fa-spin icon-loading" style="display: none;"></i>
+                            </button>
+                        </div>
+                    </fieldset>
+
+                    <!-- Stap 4: Resultaten -->
+                    <fieldset class="form-step" id="resultStep">
+                         <h2><span class="section-icon"><i class="fas fa-chart-pie"></i></span>Stap 4: Resultaten Overzicht</h2>
+                        <div id="resultSection" aria-live="polite">
+                            <div id="result">
+                                <p>Uw resultaten worden berekend...</p>
+                            </div>
+                        </div>
+                        <div class="form-navigation">
+                            <button type="button" class="prev-btn"><i class="fas fa-arrow-left"></i> Vorige</button>
+                            <button type="button" class="next-btn">Volgende (Klantgegevens) <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    </fieldset>
+
+                    <!-- Stap 5: Gegevensverzameling -->
+                    <fieldset class="form-step">
+                        <h2><span class="section-icon"><i class="fas fa-file-alt"></i></span>Stap 5: Klantgegevens</h2>
+                        <p class="step-intro">Vul onderstaande gegevens in om deze berekening op te slaan voor de klant.</p>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="bsn">BSN (optioneel):</label>
+                                <input type="text" id="bsn" name="bsn" aria-describedby="bsn-error">
+                                <span class="error-message" id="bsn-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="voorletters">Voorletter(s):</label>
+                                <input type="text" id="voorletters" name="voorletters" required aria-describedby="voorletters-error">
+                                <span class="error-message" id="voorletters-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="tussenvoegsel">Tussenvoegsel(s):</label>
+                                <input type="text" id="tussenvoegsel" name="tussenvoegsel">
+                            </div>
+                            <div class="form-group">
+                                <label for="achternaam">Achternaam:</label>
+                                <input type="text" id="achternaam" name="achternaam" required aria-describedby="achternaam-error">
+                                <span class="error-message" id="achternaam-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="geslacht">Geslacht:</label>
+                                <select id="geslacht" name="geslacht" required aria-describedby="geslacht-error">
+                                    <option value="">Kies...</option>
+                                    <option value="Man">Man</option>
+                                    <option value="Vrouw">Vrouw</option>
+                                    <option value="Anders">Anders/Zeg ik liever niet</option>
+                                </select>
+                                <span class="error-message" id="geslacht-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="telefoon">Telefoon:</label>
+                                <input type="tel" id="telefoon" name="telefoon" required aria-describedby="telefoon-error">
+                                <span class="error-message" id="telefoon-error" aria-live="polite"></span>
+                            </div>
+                             <div class="form-group">
+                                <label for="mobiel">Mobiel (optioneel):</label>
+                                <input type="tel" id="mobiel" name="mobiel" aria-describedby="mobiel-error">
+                                 <span class="error-message" id="mobiel-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">E-mailadres:</label>
+                                <input type="email" id="email" name="email" required aria-describedby="email-error">
+                                <span class="error-message" id="email-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="iban">IBAN Rekeningnummer (optioneel, voor subsidies):</label>
+                                <input type="text" id="iban" name="iban" aria-describedby="iban-error">
+                                <span class="error-message" id="iban-error" aria-live="polite"></span>
+                            </div>
+                        </div>
+                        <h3>Huidig Adres</h3>
+                         <div class="form-grid">
+                            <div class="form-group">
+                                <label for="postcode">Postcode:</label>
+                                <input type="text" id="postcode" name="postcode" required aria-describedby="postcode-error">
+                                <span class="error-message" id="postcode-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="huisnummer">Huisnummer + toevoeging:</label>
+                                <input type="text" id="huisnummer" name="huisnummer" required aria-describedby="huisnummer-error">
+                                <span class="error-message" id="huisnummer-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="straat">Straat:</label>
+                                <input type="text" id="straat" name="straat" required aria-describedby="straat-error">
+                                 <span class="error-message" id="straat-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="woonplaats">Woonplaats:</label>
+                                <input type="text" id="woonplaats" name="woonplaats" required aria-describedby="woonplaats-error">
+                                <span class="error-message" id="woonplaats-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="land">Land:</label>
+                                <input type="text" id="land" name="land" value="Nederland" required aria-describedby="land-error">
+                                <span class="error-message" id="land-error" aria-live="polite"></span>
+                            </div>
+                        </div>
+                        <div class="form-group checkbox-group">
+                             <input type="checkbox" id="installationAddressDifferent" name="installationAddressDifferent">
+                             <label for="installationAddressDifferent">Installatieadres wijkt af van huidig adres</label>
+                        </div>
+                        <div id="installationAddressSection" style="display: none;">
+                            <h3>Installatieadres</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="installatiePostcode">Installatie Postcode:</label>
+                                    <input type="text" id="installatiePostcode" name="installatiePostcode" aria-describedby="installatiePostcode-error">
+                                    <span class="error-message" id="installatiePostcode-error" aria-live="polite"></span>
+                                </div>
+                                 <div class="form-group">
+                                    <label for="installatieHuisnummer">Installatie Huisnummer + toevoeging:</label>
+                                    <input type="text" id="installatieHuisnummer" name="installatieHuisnummer" aria-describedby="installatieHuisnummer-error">
+                                    <span class="error-message" id="installatieHuisnummer-error" aria-live="polite"></span>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label for="installatieStraat">Installatie Straat:</label>
+                                    <input type="text" id="installatieStraat" name="installatieStraat" aria-describedby="installatieStraat-error">
+                                    <span class="error-message" id="installatieStraat-error" aria-live="polite"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="installatieWoonplaats">Installatie Woonplaats:</label>
+                                    <input type="text" id="installatieWoonplaats" name="installatieWoonplaats" aria-describedby="installatieWoonplaats-error">
+                                    <span class="error-message" id="installatieWoonplaats-error" aria-live="polite"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-navigation">
+                            <button type="button" class="prev-btn"><i class="fas fa-arrow-left"></i> Vorige</button>
+                            <button type="button" id="save-client-data-btn" class="next-btn"> 
+                                <span class="btn-text">Klantgegevens Opslaan</span>
+                                <i class="fas fa-save icon-main"></i>
+                                <i class="fas fa-spinner fa-spin icon-loading" style="display: none;"></i>
+                            </button>
+                        </div>
+                    </fieldset>
+                </form>
+            </div> <!-- Einde .container (tool-view content) -->
+        </div> <!-- Einde #tool-view -->
+
+        <!-- Contact View -->
+        <div id="contact-view" class="app-view">
+             <header class="view-header">
+                <button type="button" id="back-to-dashboard-from-contact-btn" class="btn-secondary btn-small back-to-dashboard-btn"><i class="fas fa-arrow-left"></i> Terug naar Dashboard</button>
+                <h1>Hulp & Contact</h1>
+            </header>
+            <div class="contact-container">
+                <p>Heeft u vragen of hulp nodig? Neem contact met ons op.</p>
+                <div class="contact-details">
+                    <p><i class="fas fa-phone"></i> 012 - 345 6789</p>
+                    <p><i class="fas fa-envelope"></i> info@uwdomein.nl</p>
+                    <p><i class="fas fa-map-marker-alt"></i> Voorbeeldstraat 1, 1234 AB Stad</p>
+                </div>
+                <form id="contact-form">
+                    <div class="form-group">
+                        <label for="contactName">Uw Naam:</label>
+                        <input type="text" id="contactName" name="contactName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactEmail">Uw E-mailadres:</label>
+                        <input type="email" id="contactEmail" name="contactEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactSubject">Onderwerp:</label>
+                        <input type="text" id="contactSubject" name="contactSubject" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactMessage">Bericht:</label>
+                        <textarea id="contactMessage" name="contactMessage" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" id="submit-contact-form-btn" class="btn-primary">Verstuur Bericht <i class="fas fa-paper-plane"></i></button>
+                    <p id="contact-form-feedback" style="margin-top:15px;"></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Settings View -->
+        <div id="settings-view" class="app-view">
+            <header class="view-header">
+                <button type="button" id="back-to-dashboard-from-settings-btn" class="btn-secondary btn-small back-to-dashboard-btn"><i class="fas fa-arrow-left"></i> Terug naar Dashboard</button>
+                <h1>Instellingen</h1>
+            </header>
+            <div class="settings-container">
+                <div class="setting-item">
+                    <h3>Wachtwoord Wijzigen</h3>
+                     <p>Deze functionaliteit is momenteel niet direct in de app beschikbaar. U kunt uw wachtwoord wijzigen via de standaard Firebase methoden (bijv. wachtwoord reset e-mail) of direct in de Firebase console indien u beheerderstoegang heeft.</p>
+                    <button type="button" id="change-password-btn" class="btn-primary" disabled>Wachtwoord Wijzigen (Niet Actief)</button>
+                </div>
+                <div class="setting-item">
+                    <h3>Thema</h3>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="darkModeToggle" name="darkModeToggle">
+                        <label for="darkModeToggle">Donkere Modus Inschakelen</label>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <h3>Applicatie Data (Huidige Gebruiker)</h3>
+                     <button type="button" id="clear-all-app-data-btn" class="btn-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Wis Mijn Applicatie Data
+                    </button>
+                    <small class="input-help-text">Hiermee worden al uw opgeslagen klanten, instellingen en formuliercache permanent verwijderd uit de cloud.</small>
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- Einde #app-container -->
+
+    <script type="module" src="script.js"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
